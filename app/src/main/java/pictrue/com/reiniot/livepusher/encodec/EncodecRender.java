@@ -1,6 +1,7 @@
 package pictrue.com.reiniot.livepusher.encodec;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
 
 import java.nio.ByteBuffer;
@@ -23,6 +24,14 @@ public class EncodecRender implements EGLSurfaceView.GLRender {
             1f, -1f,
             -1f, 1f,
             1f, 1f
+
+            ,
+            //图片纹理坐标，全部设置为0只是为了占位
+            //后面会计算，并且赋值
+            0, 0,
+            0, 0,
+            0, 0,
+            0, 0
     };
     private FloatBuffer vertexBuffer;
 
@@ -40,10 +49,30 @@ public class EncodecRender implements EGLSurfaceView.GLRender {
     private int textureid;
     private int sampler;
     private int vboId;
+    private int custom_texture_id;
+    private Bitmap bitmap;
 
     public EncodecRender(Context context,int textureid) {
         this.context = context;
         this.textureid = textureid;
+
+        bitmap = ShaderUtil.createTextImage("hello world", 50, "#ff0000", "#00000000", 10);
+        float h = 0.1f; //此处是映射到opengl中的高度
+        float ratio = 1.0f * bitmap.getWidth() / bitmap.getHeight();
+        float w = h * ratio;//此处是映射到opengl中的宽度
+
+        //假设改纹理的右下角在opengl的(0.8,-0.8)处
+        vertexData[8] = 0.8f - w;
+        vertexData[9] = -0.8f;
+
+        vertexData[10] = 0.8f;
+        vertexData[11] = -0.8f;
+
+        vertexData[12] = 0.8f - w;
+        vertexData[13] = -0.8f + 0.1f;
+
+        vertexData[14] = 0.8f;
+        vertexData[15] = -0.8f +0.1f;
 
         vertexBuffer = ByteBuffer.allocateDirect(vertexData.length * 4)
                 .order(ByteOrder.nativeOrder())
@@ -60,6 +89,10 @@ public class EncodecRender implements EGLSurfaceView.GLRender {
 
     @Override
     public void onSurfaceCreated() {
+        //开启透明度
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA,GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
         String vertexSource = ShaderUtil.getRawResource(context, R.raw.vertex_shader_screen);
         String fragmentSource = ShaderUtil.getRawResource(context, R.raw.fragment_shader_screen);
 
@@ -79,6 +112,9 @@ public class EncodecRender implements EGLSurfaceView.GLRender {
         GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4, fragmentData.length * 4, fragmentBuffer);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
 
+        //需要在 opengl线程中创建才会有效
+        custom_texture_id = ShaderUtil.loadBitmapTexture(bitmap);
+
     }
 
     @Override
@@ -92,16 +128,28 @@ public class EncodecRender implements EGLSurfaceView.GLRender {
         GLES20.glClearColor(1f, 0f, 0f, 1f);
 
         GLES20.glUseProgram(program);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
+
+
 
         //绘制普通的纹理
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureid);
 
-
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
-
         GLES20.glEnableVertexAttribArray(vPosition);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8,
                 0);
+
+        GLES20.glEnableVertexAttribArray(fPosition);
+        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8,
+                vertexData.length * 4);
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+        //绘制图片文字纹理
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, custom_texture_id);
+        GLES20.glEnableVertexAttribArray(vPosition);
+        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8,
+                32);
 
         GLES20.glEnableVertexAttribArray(fPosition);
         GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8,

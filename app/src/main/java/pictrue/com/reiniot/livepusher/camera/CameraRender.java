@@ -1,6 +1,7 @@
 package pictrue.com.reiniot.livepusher.camera;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -26,6 +27,7 @@ public class CameraRender implements EGLSurfaceView.GLRender, SurfaceTexture.OnF
             1f, -1f,
             -1f, 1f,
             1f, 1f
+
     };
     private FloatBuffer vertexBuffer;
 
@@ -61,6 +63,8 @@ public class CameraRender implements EGLSurfaceView.GLRender, SurfaceTexture.OnF
     private int width;
     private int height;
 
+
+
     public int getFboTextureid() {
         //该纹理中的数据传递给mediaCodec
         return fboTextureid;
@@ -69,6 +73,8 @@ public class CameraRender implements EGLSurfaceView.GLRender, SurfaceTexture.OnF
     public CameraRender(Context context) {
 
         this.context = context;
+
+
 
         screenWidth = DisplayUtil.getScreenWidth(context);
         screenHeight = DisplayUtil.getScreenHeight(context);
@@ -182,7 +188,7 @@ public class CameraRender implements EGLSurfaceView.GLRender, SurfaceTexture.OnF
     public void onSurfaceChanged(int width, int height) {
 //        wlCameraFboRender.onChange(width, height);
 //        GLES20.glViewport(0, 0, width, height);
-        Log.e(TAG,"onSurfaceChanged width =" + width + ",height ="+height);
+        Log.e(TAG, "onSurfaceChanged width =" + width + ",height =" + height);
         this.width = width;
         this.height = height;
     }
