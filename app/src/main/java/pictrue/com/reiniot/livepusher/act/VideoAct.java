@@ -1,6 +1,5 @@
 package pictrue.com.reiniot.livepusher.act;
 
-import android.media.MediaFormat;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -41,7 +40,7 @@ public class VideoAct extends AppCompatActivity {
                 if (mediaEncodec == null) {
                     mediaEncodec = new LgMediaEncodec(VideoAct.this, cameraView.getTextureId());
                     String name = System.currentTimeMillis() + "" + ".mp4";
-                    mediaEncodec.initEncodc(cameraView.getEglContext(), "/storage/emulated/0/DCIM/" + name, MediaFormat.MIMETYPE_VIDEO_AVC, screenWidth, screenHeight);
+                    mediaEncodec.initEncodc(cameraView.getEglContext(), "/storage/emulated/0/DCIM/" + name, screenWidth, screenHeight, 44100, 2);
                     mediaEncodec.setOnMediaInfoListener(new BaseMediaEncoder.onMediaInfoListener() {
                         @Override
                         public void onMediaTime(long time) {
