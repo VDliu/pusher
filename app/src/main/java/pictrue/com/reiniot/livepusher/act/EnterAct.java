@@ -14,6 +14,9 @@ import android.view.View;
 import android.widget.Button;
 
 import pictrue.com.reiniot.livepusher.R;
+import pictrue.com.reiniot.livepusher.imgvideo.ImageVideoActivity;
+import pictrue.com.reiniot.livepusher.imgvideo.VideoActivity;
+import pictrue.com.reiniot.livepusher.pic_muxer_video.Image2VideoAct;
 
 /**
  * 2019/8/12.
@@ -22,6 +25,7 @@ public class EnterAct extends AppCompatActivity {
     private boolean isPermissioned;
     private Button go;
     private Button record;
+    private Button pic_muxer_video;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -38,6 +42,16 @@ public class EnterAct extends AppCompatActivity {
         setContentView(R.layout.act_enter);
         go = findViewById(R.id.id_go_camera);
         record = findViewById(R.id.record);
+        pic_muxer_video = findViewById(R.id.pic_muxer_video);
+
+        pic_muxer_video.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent it = new Intent(EnterAct.this, ImageVideoActivity.class);
+                startActivity(it);
+            }
+        });
+
 
         go.setOnClickListener(new View.OnClickListener() {
             @Override

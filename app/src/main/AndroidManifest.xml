@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="pictrue.com.reiniot.livepusher">
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -18,9 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".act.MainActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"/>
-        <activity android:name=".act.VideoAct"/>
+        <activity
+            android:name=".act.MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity android:name=".act.VideoAct" />
+        <activity android:name=".pic_muxer_video.Image2VideoAct" />
+        <activity android:name=".imgvideo.VideoActivity"/>
+        <activity android:name=".imgvideo.ImageVideoActivity"/>
     </application>
 
 </manifest>

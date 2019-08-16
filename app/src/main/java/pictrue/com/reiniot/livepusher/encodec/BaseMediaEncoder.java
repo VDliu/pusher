@@ -33,6 +33,9 @@ public abstract class BaseMediaEncoder {
     private boolean isMediaMuxerStart = false;
     private boolean audioExit = false;
     private boolean videoExit = false;
+
+    protected Object stop_lock = new Object();
+    private boolean stop_exit = false;
     //mediacodec
 
     private MediaCodec videoEncodec;
@@ -169,13 +172,17 @@ public abstract class BaseMediaEncoder {
 
     public void putPcmData(byte[] data, int size) {
         if (data != null && size > 0 && audioEncodecThread != null && !audioEncodecThread.isExit) {
-            int inputBufferIndex = audioEncodec.dequeueInputBuffer(0);
-            while (inputBufferIndex >= 0) {
-                ByteBuffer buffer = audioEncodec.getInputBuffers()[inputBufferIndex];
-                buffer.clear();
-                buffer.put(data);
-                long pts = getAudioPts(size, audioSampleRate, audioChannel);
-                audioEncodec.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
+            try {
+                int inputBufferIndex = audioEncodec.dequeueInputBuffer(50);
+                while (inputBufferIndex >= 0) {
+                    ByteBuffer buffer = audioEncodec.getInputBuffers()[inputBufferIndex];
+                    buffer.clear();
+                    buffer.put(data);
+                    long pts = getAudioPts(size, audioSampleRate, audioChannel);
+                    audioEncodec.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
+                }
+            }catch (Exception e){
+                Log.i(TAG, "putPcmData: " + e.getMessage() );
             }
 
         }
@@ -195,6 +202,7 @@ public abstract class BaseMediaEncoder {
             videoEncodecThread = null;
             eglMediaThread = null;
             audioEncodecThread = null;
+            isMediaMuxerStart = false;
         }
     }
 
@@ -354,48 +362,67 @@ public abstract class BaseMediaEncoder {
                     videoEncodec = null;
 
                     //录制本地，只有录制结束的时候才会把头信息写入
-                    encoder.get().videoExit = true;
-                    if (encoder.get().audioExit) {
-                        mediaMuxer.stop();
-                        mediaMuxer.release();
-                        mediaMuxer = null;
-                    }
-                    Log.e(TAG, "run: 录制完成");
-                    break;
-                }
-                int outputBufferIndex = videoEncodec.dequeueOutputBuffer(videoBufferInfo, 0);
-                if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    videoTrackIndex = mediaMuxer.addTrack(videoEncodec.getOutputFormat());
-                    if (encoder.get().audioEncodecThread.audioTrackIndex != -1) {
-                        mediaMuxer.start();
-                        encoder.get().isMediaMuxerStart = true;
-                    }
+                    synchronized (encoder.get().stop_lock) {
+                        Log.e(TAG, "video thread run: audio exit1 =" + encoder.get().audioExit);
+                        encoder.get().videoExit = true;
+                        if (encoder.get().audioExit) {
+                            Log.e(TAG, "video thread run: audio exit2 =" + encoder.get().audioExit);
 
-                } else {
-                    while (outputBufferIndex >= 0) {
-                        if (encoder.get().isMediaMuxerStart) {
-                            ByteBuffer outputBuffer = videoEncodec.getOutputBuffers()[outputBufferIndex];
-                            outputBuffer.position(videoBufferInfo.offset);
-                            outputBuffer.limit(videoBufferInfo.offset + videoBufferInfo.size);
-                            //pts默认为当前的时间戳
-                            if (pts == 0) {
-                                pts = videoBufferInfo.presentationTimeUs;
-                                Log.e(TAG, "run: pts = " + pts);
+                            if (encoder.get().stop_exit) {
+                                break;
                             }
-                            videoBufferInfo.presentationTimeUs = videoBufferInfo.presentationTimeUs - pts;
-                            Log.e(TAG, "run: videoBufferInfo.presentationTimeUs =" + videoBufferInfo.presentationTimeUs);
-                            //写入数据
-                            mediaMuxer.writeSampleData(videoTrackIndex, outputBuffer, videoBufferInfo);
-                            if (encoder.get().onMediaInfoListener != null) {
-                                encoder.get().onMediaInfoListener.onMediaTime(videoBufferInfo.presentationTimeUs / (1000 * 1000));
+                            encoder.get().stop_exit = true;
+                            Log.e(TAG, "run: stop video");
+                            mediaMuxer.stop();
+                            mediaMuxer.release();
+                            mediaMuxer = null;
+                        }
+                        Log.e(TAG, "run: 录制完成");
+                        break;
+                    }
+                }
+                try {
+                    int outputBufferIndex = videoEncodec.dequeueOutputBuffer(videoBufferInfo, 0);
+                    if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        if (mediaMuxer != null) {
+                            synchronized (encoder.get().stop_lock) {
+                                videoTrackIndex = mediaMuxer.addTrack(videoEncodec.getOutputFormat());
+                                if (encoder.get().audioEncodecThread.audioTrackIndex != -1 && !encoder.get().isMediaMuxerStart) {
+                                    mediaMuxer.start();
+                                    encoder.get().isMediaMuxerStart = true;
+                                }
                             }
                         }
 
-                        //第二个参数表示是否需要渲染
-                        videoEncodec.releaseOutputBuffer(outputBufferIndex, false);
-                        outputBufferIndex = videoEncodec.dequeueOutputBuffer(videoBufferInfo, 0);
-                    }
+                    } else {
+                        while (outputBufferIndex >= 0) {
+                            if (encoder.get().isMediaMuxerStart) {
+                                ByteBuffer outputBuffer = videoEncodec.getOutputBuffers()[outputBufferIndex];
+                                outputBuffer.position(videoBufferInfo.offset);
+                                outputBuffer.limit(videoBufferInfo.offset + videoBufferInfo.size);
+                                //pts默认为当前的时间戳
+                                if (pts == 0) {
+                                    pts = videoBufferInfo.presentationTimeUs;
+                                    // Log.e(TAG, "run: pts = " + pts);
+                                }
+                                videoBufferInfo.presentationTimeUs = videoBufferInfo.presentationTimeUs - pts;
+                                // Log.e(TAG, "run: videoBufferInfo.presentationTimeUs =" + videoBufferInfo.presentationTimeUs);
+                                //写入数据
+                                mediaMuxer.writeSampleData(videoTrackIndex, outputBuffer, videoBufferInfo);
+                                Log.e(TAG, "run: video write ok" );
+                                if (encoder.get().onMediaInfoListener != null) {
+                                    encoder.get().onMediaInfoListener.onMediaTime(videoBufferInfo.presentationTimeUs / (1000 * 1000));
+                                }
+                            }
 
+                            //第二个参数表示是否需要渲染
+                            videoEncodec.releaseOutputBuffer(outputBufferIndex, false);
+                            outputBufferIndex = videoEncodec.dequeueOutputBuffer(videoBufferInfo, 0);
+                        }
+
+                    }
+                }catch (Exception e){
+                    Log.i(TAG, "run: video encoder" +e.getMessage() );
                 }
             }
 
@@ -434,6 +461,8 @@ public abstract class BaseMediaEncoder {
         public void run() {
             super.run();
             isExit = false;
+            audioEncodec.start();
+            Log.e(TAG, "run: audio mediaCode start");
 
             while (true) {
                 //回收资源
@@ -441,42 +470,65 @@ public abstract class BaseMediaEncoder {
                     audioEncodec.stop();
                     audioEncodec.release();
                     audioEncodec = null;
-                    encoder.get().audioExit = true;
-                    if (encoder.get().videoExit) {
-                        mediaMuxer.stop();
-                        mediaMuxer.release();
-                        mediaMuxer = null;
-                    }
-                    break;
-                }
-
-                int outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
-                if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    audioTrackIndex = mediaMuxer.addTrack(audioEncodec.getOutputFormat());
-                    if (encoder.get().videoEncodecThread.videoTrackIndex != -1) {
-                        mediaMuxer.start();
-                        encoder.get().isMediaMuxerStart = true;
-                    }
-                } else {
-                    while (outputBufferIndex >= 0) {
-                        if (encoder.get().isMediaMuxerStart) {
-                            ByteBuffer outputBuffer = audioEncodec.getOutputBuffers()[outputBufferIndex];
-                            outputBuffer.position(audioBufferInfo.offset);
-                            outputBuffer.limit(audioBufferInfo.offset + audioBufferInfo.size);
-                            //pts默认为当前的时间戳
-                            if (pts == 0) {
-                                pts = audioBufferInfo.presentationTimeUs;
-                                Log.e(TAG, "run: pts = " + pts);
+                    synchronized (encoder.get().stop_lock) {
+                        Log.e(TAG, "audio thread run: video exit1 =" + encoder.get().videoExit);
+                        encoder.get().audioExit = true;
+                        if (encoder.get().videoExit) {
+                            Log.e(TAG, "audio thread run: video exit2 =" + encoder.get().videoExit);
+                            Log.e(TAG, "audio thread run: stop audio");
+                            if (encoder.get().stop_exit) {
+                                break;
                             }
-                            audioBufferInfo.presentationTimeUs = audioBufferInfo.presentationTimeUs - pts;
-                            //写入数据
-                            mediaMuxer.writeSampleData(audioTrackIndex, outputBuffer, audioBufferInfo);
+                            encoder.get().stop_exit = true;
+                            mediaMuxer.stop();
+                            mediaMuxer.release();
+                            mediaMuxer = null;
                         }
-
-                        audioEncodec.releaseOutputBuffer(outputBufferIndex, false);
-                        outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
+                        Log.e(TAG, "audio thread run: break");
+                        break;
                     }
                 }
+
+                try {
+                    int outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
+                    if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        if (mediaMuxer != null) {
+                            synchronized (encoder.get().stop_lock) {
+                                audioTrackIndex = mediaMuxer.addTrack(audioEncodec.getOutputFormat());
+                                Log.e(TAG, "run: audioTrackIndex = "+audioTrackIndex );
+                                if (encoder.get().videoEncodecThread.videoTrackIndex != -1 && !encoder.get().isMediaMuxerStart) { //音视频的track都添加完毕后，才能开启start
+                                    Log.e(TAG, "run: audio mediacodec-- start");
+                                    mediaMuxer.start();
+                                    Log.e(TAG, "run: audio mediacodec --start");
+                                    encoder.get().isMediaMuxerStart = true;
+                                    Log.e(TAG, "run: audio mediacodec-- start");
+                                }
+                            }
+                        }
+                    } else {
+                        while (outputBufferIndex >= 0) {
+                            if (encoder.get().isMediaMuxerStart) {
+                                ByteBuffer outputBuffer = audioEncodec.getOutputBuffers()[outputBufferIndex];
+                                outputBuffer.position(audioBufferInfo.offset);
+                                outputBuffer.limit(audioBufferInfo.offset + audioBufferInfo.size);
+                                //pts默认为当前的时间戳
+                                if (pts == 0) {
+                                    pts = audioBufferInfo.presentationTimeUs;
+                                    Log.e(TAG, "run: pts = " + pts);
+                                }
+                                audioBufferInfo.presentationTimeUs = audioBufferInfo.presentationTimeUs - pts;
+                                //写入数据
+                                mediaMuxer.writeSampleData(audioTrackIndex, outputBuffer, audioBufferInfo);
+                            }
+
+                            audioEncodec.releaseOutputBuffer(outputBufferIndex, false);
+                            outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.i(TAG, "run: audio dequeue failed --reason:" + e.getMessage());
+                }
+
             }
         }
     }
