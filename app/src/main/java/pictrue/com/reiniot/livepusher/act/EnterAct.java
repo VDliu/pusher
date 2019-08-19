@@ -17,6 +17,7 @@ import pictrue.com.reiniot.livepusher.R;
 import pictrue.com.reiniot.livepusher.imgvideo.ImageVideoActivity;
 import pictrue.com.reiniot.livepusher.imgvideo.VideoActivity;
 import pictrue.com.reiniot.livepusher.pic_muxer_video.Image2VideoAct;
+import pictrue.com.reiniot.livepusher.yuv_play.PlayYuvAct;
 
 /**
  * 2019/8/12.
@@ -26,6 +27,7 @@ public class EnterAct extends AppCompatActivity {
     private Button go;
     private Button record;
     private Button pic_muxer_video;
+    private Button play_yuv;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,6 +45,15 @@ public class EnterAct extends AppCompatActivity {
         go = findViewById(R.id.id_go_camera);
         record = findViewById(R.id.record);
         pic_muxer_video = findViewById(R.id.pic_muxer_video);
+        play_yuv = findViewById(R.id.play_yuv);
+        play_yuv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent it = new Intent(EnterAct.this, PlayYuvAct.class);
+                startActivity(it);
+            }
+        });
+
 
         pic_muxer_video.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -20,5 +20,10 @@
         android:id="@+id/pic_muxer_video"
         android:text="图片合成视频"
         android:layout_height="wrap_content" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/play_yuv"
+        android:text="播放yuv"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

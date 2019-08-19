@@ -26,6 +26,7 @@
         <activity android:name=".pic_muxer_video.Image2VideoAct" />
         <activity android:name=".imgvideo.VideoActivity"/>
         <activity android:name=".imgvideo.ImageVideoActivity"/>
+        <activity android:name=".yuv_play.PlayYuvAct"/>
     </application>
 
 </manifest>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <pictrue.com.reiniot.livepusher.yuv_play.YuvView
+        android:id="@+id/yuv_view"
+        android:layout_width="1280px"
+        android:layout_height="640px" />
+
+    <Button
+        android:id="@+id/start"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:text="start" />
+
+</RelativeLayout>
