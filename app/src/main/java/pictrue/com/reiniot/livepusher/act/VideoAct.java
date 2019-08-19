@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 
 import pictrue.com.reiniot.livepusher.R;
+import pictrue.com.reiniot.livepusher.audio_record.AudioRecordUtil;
 import pictrue.com.reiniot.livepusher.camera.CameraView;
 import pictrue.com.reiniot.livepusher.encodec.BaseMediaEncoder;
 import pictrue.com.reiniot.livepusher.encodec.LgMediaEncodec;
@@ -23,6 +24,7 @@ public class VideoAct extends AppCompatActivity {
     private LgMediaEncodec mediaEncodec;
     private int screenWidth;
     private int screenHeight;
+    private AudioRecordUtil audioRecordUtil;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,6 +35,16 @@ public class VideoAct extends AppCompatActivity {
         screenWidth = DisplayUtil.getScreenWidth(this);
         screenHeight = DisplayUtil.getScreenHeight(this);
         record.setText("开始录制");
+        audioRecordUtil = new AudioRecordUtil();
+        audioRecordUtil.setListener(new AudioRecordUtil.OnRecordListener() {
+            @Override
+            public void onRecorder(byte[] data, int size) {
+                if (mediaEncodec != null) {
+                    Log.e(TAG, "onRecorder: size =" + size );
+                    mediaEncodec.putPcmData(data, size);
+                }
+            }
+        });
 
         record.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -40,7 +52,7 @@ public class VideoAct extends AppCompatActivity {
                 if (mediaEncodec == null) {
                     mediaEncodec = new LgMediaEncodec(VideoAct.this, cameraView.getTextureId());
                     String name = System.currentTimeMillis() + "" + ".mp4";
-                    mediaEncodec.initEncodc(cameraView.getEglContext(), "/storage/emulated/0/DCIM/" + name, screenWidth, screenHeight, 44100, 2);
+                    mediaEncodec.initEncodc(cameraView.getEglContext(), "/storage/emulated/0/avideo/" + name, screenWidth, screenHeight, 44100, 2);
                     mediaEncodec.setOnMediaInfoListener(new BaseMediaEncoder.onMediaInfoListener() {
                         @Override
                         public void onMediaTime(long time) {
@@ -48,11 +60,14 @@ public class VideoAct extends AppCompatActivity {
                         }
                     });
                     mediaEncodec.start();
+                    audioRecordUtil.start();
+
                     record.setText("正在录制");
                 } else {
                     mediaEncodec.stop();
                     record.setText("开始录制");
                     mediaEncodec = null;
+                    audioRecordUtil.stopRecord();
                 }
 
             }

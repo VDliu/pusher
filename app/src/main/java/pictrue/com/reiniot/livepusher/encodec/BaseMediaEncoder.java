@@ -136,7 +136,7 @@ public abstract class BaseMediaEncoder {
             audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000);
             //aac等级
             audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
+            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 8192);
             audioEncodec = MediaCodec.createEncoderByType(mimeType);
 
             audioEncodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -171,25 +171,36 @@ public abstract class BaseMediaEncoder {
     }
 
     public void putPcmData(byte[] data, int size) {
+        Log.e(TAG, "putPcmData: data =" +data + ",size ="+size + ",audioEncodecThread = "+audioEncodecThread + ",audioEncodecThread.isExit=" + audioEncodecThread.isExit );
         if (data != null && size > 0 && audioEncodecThread != null && !audioEncodecThread.isExit) {
             try {
-                int inputBufferIndex = audioEncodec.dequeueInputBuffer(50);
+                int inputBufferIndex = audioEncodec.dequeueInputBuffer(-1);
+                Log.e(TAG, "putPcmData: inputBufferIndex =" + inputBufferIndex + size);
                 while (inputBufferIndex >= 0) {
+                    Log.e(TAG, "putPcmData: 1" );
                     ByteBuffer buffer = audioEncodec.getInputBuffers()[inputBufferIndex];
+                    Log.e(TAG, "putPcmData: 2" );
                     buffer.clear();
+                    Log.e(TAG, "putPcmData: 3" );
                     buffer.put(data);
+                    Log.e(TAG, "putPcmData: 4" );
                     long pts = getAudioPts(size, audioSampleRate, audioChannel);
+                    Log.e(TAG, "putPcmData: 5" );
                     audioEncodec.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
+                    Log.e(TAG, "putPcmData: queue audio data to audioEncodec");
                 }
-            }catch (Exception e){
-                Log.i(TAG, "putPcmData: " + e.getMessage() );
+            } catch (Exception e) {
+                Log.i(TAG, "putPcmData: " + e.getMessage());
             }
 
+        } else {
+            Log.e(TAG, "putPcmData: nodata");
         }
     }
 
     private long getAudioPts(int size, int sampleRate, int channel) {
-        audio_pts += ((long) 1.0f * size / (sampleRate * channel * 2)) * 1000 * 1000;
+        audio_pts += ((1.0f * size)/(sampleRate * channel * 2 * 1.0f)) * 1000 * 1000 * 1L;
+        Log.e(TAG, "getAudioPts: pts ="+ audio_pts );
         return audio_pts;
     }
 
@@ -383,14 +394,18 @@ public abstract class BaseMediaEncoder {
                 }
                 try {
                     int outputBufferIndex = videoEncodec.dequeueOutputBuffer(videoBufferInfo, 0);
+
                     if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                         if (mediaMuxer != null) {
                             synchronized (encoder.get().stop_lock) {
                                 videoTrackIndex = mediaMuxer.addTrack(videoEncodec.getOutputFormat());
+                                Log.e(TAG, "run: videoTrackIndex =" + videoTrackIndex);
                                 if (encoder.get().audioEncodecThread.audioTrackIndex != -1 && !encoder.get().isMediaMuxerStart) {
                                     mediaMuxer.start();
                                     encoder.get().isMediaMuxerStart = true;
+                                    Log.e(TAG, "run: videoTrackIndex mediaMuxer start");
                                 }
+                                Log.e(TAG, "run: videoTrackIndex break");
                             }
                         }
 
@@ -409,7 +424,6 @@ public abstract class BaseMediaEncoder {
                                 // Log.e(TAG, "run: videoBufferInfo.presentationTimeUs =" + videoBufferInfo.presentationTimeUs);
                                 //写入数据
                                 mediaMuxer.writeSampleData(videoTrackIndex, outputBuffer, videoBufferInfo);
-                                Log.e(TAG, "run: video write ok" );
                                 if (encoder.get().onMediaInfoListener != null) {
                                     encoder.get().onMediaInfoListener.onMediaTime(videoBufferInfo.presentationTimeUs / (1000 * 1000));
                                 }
@@ -421,8 +435,8 @@ public abstract class BaseMediaEncoder {
                         }
 
                     }
-                }catch (Exception e){
-                    Log.i(TAG, "run: video encoder" +e.getMessage() );
+                } catch (Exception e) {
+                    Log.i(TAG, "run: video encoder" + e.getMessage());
                 }
             }
 
@@ -491,18 +505,18 @@ public abstract class BaseMediaEncoder {
 
                 try {
                     int outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
+                  //  Log.e(TAG, "run: audio thread outputBufferIndex =" +outputBufferIndex );
                     if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                         if (mediaMuxer != null) {
                             synchronized (encoder.get().stop_lock) {
                                 audioTrackIndex = mediaMuxer.addTrack(audioEncodec.getOutputFormat());
-                                Log.e(TAG, "run: audioTrackIndex = "+audioTrackIndex );
+                                Log.e(TAG, "run: audioTrackIndex = " + audioTrackIndex);
                                 if (encoder.get().videoEncodecThread.videoTrackIndex != -1 && !encoder.get().isMediaMuxerStart) { //音视频的track都添加完毕后，才能开启start
-                                    Log.e(TAG, "run: audio mediacodec-- start");
                                     mediaMuxer.start();
-                                    Log.e(TAG, "run: audio mediacodec --start");
                                     encoder.get().isMediaMuxerStart = true;
-                                    Log.e(TAG, "run: audio mediacodec-- start");
+                                    Log.e(TAG, "run: audioTrackIndex mediacodec-- start");
                                 }
+                                Log.e(TAG, "run: audioTrackIndex break");
                             }
                         }
                     } else {

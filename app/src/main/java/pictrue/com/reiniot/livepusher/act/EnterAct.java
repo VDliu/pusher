@@ -12,11 +12,10 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import pictrue.com.reiniot.livepusher.R;
 import pictrue.com.reiniot.livepusher.imgvideo.ImageVideoActivity;
-import pictrue.com.reiniot.livepusher.imgvideo.VideoActivity;
-import pictrue.com.reiniot.livepusher.pic_muxer_video.Image2VideoAct;
 import pictrue.com.reiniot.livepusher.yuv_play.PlayYuvAct;
 
 /**
@@ -33,7 +32,8 @@ public class EnterAct extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
+            if (PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    || PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO,
                         Manifest.permission.CAMERA,
                 }, 1);
@@ -46,6 +46,7 @@ public class EnterAct extends AppCompatActivity {
         record = findViewById(R.id.record);
         pic_muxer_video = findViewById(R.id.pic_muxer_video);
         play_yuv = findViewById(R.id.play_yuv);
+        //绘制yuv数据
         play_yuv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -55,15 +56,20 @@ public class EnterAct extends AppCompatActivity {
         });
 
 
+        //图片合成视频
         pic_muxer_video.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!isPermissioned) {
+                    Toast.makeText(EnterAct.this, "为获取权限", Toast.LENGTH_SHORT).show();
+                }
                 Intent it = new Intent(EnterAct.this, ImageVideoActivity.class);
                 startActivity(it);
             }
         });
 
 
+        //视频预览
         go.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -73,9 +79,13 @@ public class EnterAct extends AppCompatActivity {
                 }
             }
         });
+        //视频录制
         record.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!isPermissioned) {
+                    Toast.makeText(EnterAct.this, "为获取权限", Toast.LENGTH_SHORT).show();
+                }
                 Intent it = new Intent(EnterAct.this, VideoAct.class);
                 startActivity(it);
             }
