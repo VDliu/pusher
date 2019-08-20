@@ -171,23 +171,15 @@ public abstract class BaseMediaEncoder {
     }
 
     public void putPcmData(byte[] data, int size) {
-        Log.e(TAG, "putPcmData: data =" +data + ",size ="+size + ",audioEncodecThread = "+audioEncodecThread + ",audioEncodecThread.isExit=" + audioEncodecThread.isExit );
         if (data != null && size > 0 && audioEncodecThread != null && !audioEncodecThread.isExit) {
             try {
                 int inputBufferIndex = audioEncodec.dequeueInputBuffer(-1);
-                Log.e(TAG, "putPcmData: inputBufferIndex =" + inputBufferIndex + size);
                 while (inputBufferIndex >= 0) {
-                    Log.e(TAG, "putPcmData: 1" );
                     ByteBuffer buffer = audioEncodec.getInputBuffers()[inputBufferIndex];
-                    Log.e(TAG, "putPcmData: 2" );
                     buffer.clear();
-                    Log.e(TAG, "putPcmData: 3" );
                     buffer.put(data);
-                    Log.e(TAG, "putPcmData: 4" );
                     long pts = getAudioPts(size, audioSampleRate, audioChannel);
-                    Log.e(TAG, "putPcmData: 5" );
                     audioEncodec.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
-                    Log.e(TAG, "putPcmData: queue audio data to audioEncodec");
                 }
             } catch (Exception e) {
                 Log.i(TAG, "putPcmData: " + e.getMessage());

@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import pictrue.com.reiniot.livepusher.R;
 import pictrue.com.reiniot.livepusher.imgvideo.ImageVideoActivity;
+import pictrue.com.reiniot.livepusher.push.LivePush;
 import pictrue.com.reiniot.livepusher.yuv_play.PlayYuvAct;
 
 /**
@@ -27,6 +28,7 @@ public class EnterAct extends AppCompatActivity {
     private Button record;
     private Button pic_muxer_video;
     private Button play_yuv;
+    private Button push;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,6 +53,15 @@ public class EnterAct extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent it = new Intent(EnterAct.this, PlayYuvAct.class);
+                startActivity(it);
+            }
+        });
+
+        push = findViewById(R.id.push);
+        push.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent it = new Intent(EnterAct.this, LivePush.class);
                 startActivity(it);
             }
         });

@@ -26,4 +26,10 @@
         android:text="播放yuv"
         android:layout_height="wrap_content" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/push"
+        android:text="push live"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>

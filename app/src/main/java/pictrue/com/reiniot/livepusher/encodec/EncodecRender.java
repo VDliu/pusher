@@ -14,6 +14,7 @@ import pictrue.com.reiniot.livepusher.egl.ShaderUtil;
 
 /**
  * 2019/8/15.
+ * 该类是把纹理中的图 绘制到videomediacodec中的surface中，然后获取到数据用于编码
  */
 public class EncodecRender implements EGLSurfaceView.GLRender {
 

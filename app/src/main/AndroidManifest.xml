@@ -4,7 +4,8 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -25,9 +26,9 @@
             android:configChanges="orientation|keyboardHidden|screenSize" />
         <activity android:name=".act.VideoAct" />
         <activity android:name=".pic_muxer_video.Image2VideoAct" />
-        <activity android:name=".imgvideo.VideoActivity"/>
-        <activity android:name=".imgvideo.ImageVideoActivity"/>
-        <activity android:name=".yuv_play.PlayYuvAct"/>
+        <activity android:name=".imgvideo.VideoActivity" />
+        <activity android:name=".imgvideo.ImageVideoActivity" />
+        <activity android:name=".yuv_play.PlayYuvAct" />
     </application>
 
 </manifest>

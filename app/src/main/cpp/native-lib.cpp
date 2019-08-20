@@ -1,12 +1,15 @@
 #include <jni.h>
-#include <string>
+#include "RtmpPush.h"
 
-extern "C" JNIEXPORT jstring
+JNIEXPORT void JNICALL
+Java_pictrue_com_reiniot_livepusher_push_PushVideo_initPush(JNIEnv *env, jobject instance,
+                                                            jstring pushUrl_) {
+    const char *pushUrl = env->GetStringUTFChars(pushUrl_, 0);
 
-JNICALL
-Java_pictrue_com_reiniot_livepusher_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
+    // TODO
+    RtmpPush *rtmpPush = new RtmpPush(pushUrl);
+    rtmpPush->init();
+
+
+    env->ReleaseStringUTFChars(pushUrl_, pushUrl);
 }
