@@ -25,12 +25,18 @@ public:
     PushQueue *pushQueue = NULL;
     pthread_t push_thread;
     CallJava *callJava = NULL;
+    bool startPush;
+    long startTime;
 public:
     RtmpPush(const char *url,CallJava *callJava);
 
     ~RtmpPush();
 
     void init();
+
+    void pushSpsPps(char *sps,int spsLen,char*pps,int ppsLen);
+
+    void pushVideo(char *data,int len, bool isKeyFrame);
 
 };
 

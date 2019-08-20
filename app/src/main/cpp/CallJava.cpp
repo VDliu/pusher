@@ -8,6 +8,7 @@ CallJava::CallJava(JavaVM *javaVM, JNIEnv *jniEnv, jobject *jobj) {
 
     this->javaVM = javaVM;
     this->jniEnv = jniEnv;
+    //设置为全局 因为主线程 子线程都会使用该对象
     this->jobj = jniEnv->NewGlobalRef(*jobj);
 
     jclass jlz = jniEnv->GetObjectClass(this->jobj);

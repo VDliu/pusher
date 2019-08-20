@@ -29,6 +29,7 @@
         <activity android:name=".imgvideo.VideoActivity" />
         <activity android:name=".imgvideo.ImageVideoActivity" />
         <activity android:name=".yuv_play.PlayYuvAct" />
+        <activity android:name=".push.LivePushAct"  android:theme="@android:style/Theme.NoTitleBar.Fullscreen"/>
     </application>
 
 </manifest>
