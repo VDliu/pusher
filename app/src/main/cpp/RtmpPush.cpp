@@ -6,10 +6,12 @@
 
 #include "RtmpPush.h"
 
-RtmpPush::RtmpPush(char *url) {
+RtmpPush::RtmpPush(const char *url,CallJava *callJava) {
     this->url = (char *) malloc(512);
     strcpy(this->url, url);
     pushQueue = new PushQueue();
+    this->callJava = callJava;
+
 }
 
 RtmpPush::~RtmpPush() {
@@ -40,15 +42,19 @@ void *pushCallBack(void *data) {
     if (!RTMP_Connect(rtmpPush->rtmp, NULL)) {
         //连接失败
         LOGE("can not connect url");
+        rtmpPush->callJava->onConnectFail("can not connect the url");
         goto end;
 
     }
 
     //连接流
     if (RTMP_ConnectStream(rtmpPush->rtmp, 0)) {
+        rtmpPush->callJava->onConnectFail("can not connect the stream of service");
         goto end;
-        LOGE("can not connect stream");
     }
+
+    rtmpPush->callJava->onConnectsuccess();
+
 
     //循环推流
     while (true) {
@@ -57,13 +63,14 @@ void *pushCallBack(void *data) {
 
 
     end:
-    RTMP_Close(rtmpPush->rtmp);
-    RTMP_Free(rtmpPush->rtmp);
-    rtmpPush->rtmp = NULL;
+        RTMP_Close(rtmpPush->rtmp);
+        RTMP_Free(rtmpPush->rtmp);
+        rtmpPush->rtmp = NULL;
     pthread_exit(&rtmpPush->push_thread);
 
 }
 
 void RtmpPush::init() {
+    callJava->onConnectint(WL_THREAD_MAIN);
     pthread_create(&push_thread, NULL, pushCallBack, this);
 }

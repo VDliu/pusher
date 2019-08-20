@@ -11,6 +11,7 @@
 #include <cstring>
 #include "PushQueue.h"
 #include "pthread.h"
+#include "CallJava.h"
 
 extern "C" {
 #include "librtmp/rtmp.h"
@@ -23,9 +24,9 @@ public:
     char *url = NULL;
     PushQueue *pushQueue = NULL;
     pthread_t push_thread;
-
+    CallJava *callJava = NULL;
 public:
-    RtmpPush(const char *url);
+    RtmpPush(const char *url,CallJava *callJava);
 
     ~RtmpPush();
 

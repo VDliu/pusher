@@ -19,6 +19,7 @@ add_library( # Sets the name of the library.
              src/main/cpp/librtmp/rtmp.c
              src/main/cpp/PushQueue.cpp
              src/main/cpp/RtmpPush.cpp
+             src/main/cpp/CallJava.cpp
 
              )
 
