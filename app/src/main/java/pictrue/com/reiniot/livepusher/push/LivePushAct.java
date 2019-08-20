@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 
 import pictrue.com.reiniot.livepusher.R;
+import pictrue.com.reiniot.livepusher.audio_record.AudioRecordUtil;
 import pictrue.com.reiniot.livepusher.util.DisplayUtil;
 
 /**
@@ -54,6 +55,11 @@ public class LivePushAct extends AppCompatActivity {
                     @Override
                     public void onVidoInfo(byte[] data, boolean isKeyFrame) {
                         pushVideo.pushVideoData(data, data.length, isKeyFrame);
+                    }
+
+                    @Override
+                    public void onAudioInfo(byte[] data) {
+                        pushVideo.pushAudioData(data);
                     }
                 });
             }

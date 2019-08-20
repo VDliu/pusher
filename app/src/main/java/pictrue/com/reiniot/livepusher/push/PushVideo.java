@@ -54,9 +54,23 @@ public class PushVideo {
         }
     }
 
+    public void pushAudioData(byte[] data) {
+        if (data != null) {
+            pushAudio(data, data.length);
+        }
+    }
+
+    public void stop() {
+        pushStop();
+    }
+
     private native void initPush(String pushUrl);
 
     private native void pushSpsPps(byte[] sps, int spslen, byte[] pps, int ppsLen);
 
     private native void pushVideo(byte[] avc, int len, boolean isKeyFame);
+
+    private native void pushAudio(byte[] data, int len);
+
+    private native void pushStop();
 }

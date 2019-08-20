@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 
 import javax.microedition.khronos.egl.EGLContext;
 
+import pictrue.com.reiniot.livepusher.audio_record.AudioRecordUtil;
 import pictrue.com.reiniot.livepusher.egl.EGLSurfaceView;
 import pictrue.com.reiniot.livepusher.egl.EglHelper;
 
@@ -50,6 +51,8 @@ public abstract class BasePushEncoder {
     protected int audioChannel;
     onMediaInfoListener onMediaInfoListener;
 
+    AudioRecordUtil audioRecordUtil;
+
 
     //egl
     private Surface surface;
@@ -84,6 +87,7 @@ public abstract class BasePushEncoder {
     private void initMediaEncodec(int width, int height, int sampleRate, int channel) {
         initVideoEncodec(MediaFormat.MIMETYPE_VIDEO_AVC, width, height);
         initAudioEncodec(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channel);
+        initPcmRecorder();
 
     }
 
@@ -140,6 +144,18 @@ public abstract class BasePushEncoder {
         }
     }
 
+    private void initPcmRecorder() {
+        audioRecordUtil = new AudioRecordUtil();
+        audioRecordUtil.setListener(new AudioRecordUtil.OnRecordListener() {
+            @Override
+            public void onRecorder(byte[] data, int size) {
+                if (audioRecordUtil.isStart()) {
+                    putPcmData(data, size);
+                }
+            }
+        });
+    }
+
     public void setOnMediaInfoListener(BasePushEncoder.onMediaInfoListener onMediaInfoListener) {
         this.onMediaInfoListener = onMediaInfoListener;
     }
@@ -158,6 +174,7 @@ public abstract class BasePushEncoder {
             eglMediaThread.start();
             videoEncodecThread.start();
             audioEncodecThread.start();
+            audioRecordUtil.start();
         }
     }
 
@@ -196,6 +213,7 @@ public abstract class BasePushEncoder {
             videoEncodecThread = null;
             eglMediaThread = null;
             audioEncodecThread = null;
+            audioRecordUtil.stopRecord();
         }
     }
 
@@ -429,14 +447,12 @@ public abstract class BasePushEncoder {
         private boolean isExit;
         private MediaCodec audioEncodec;
         private MediaCodec.BufferInfo audioBufferInfo;
-        private int audioTrackIndex;
         private long pts;
 
         public AudioEncodecThread(WeakReference<BasePushEncoder> encoder) {
             this.encoder = encoder;
             this.audioEncodec = encoder.get().audioEncodec;
             this.audioBufferInfo = encoder.get().audioBufferInfo;
-            audioTrackIndex = -1;
             pts = 0;
         }
 
@@ -483,9 +499,14 @@ public abstract class BasePushEncoder {
                             if (pts == 0) {
                                 pts = audioBufferInfo.presentationTimeUs;
                             }
+
+                            byte[] data = new byte[outputBuffer.remaining()];
+                            outputBuffer.get(data, 0, data.length);
+                            if (encoder.get().onMediaInfoListener != null) {
+                                encoder.get().onMediaInfoListener.onAudioInfo(data);
+                            }
+
                             audioBufferInfo.presentationTimeUs = audioBufferInfo.presentationTimeUs - pts;
-
-
                             audioEncodec.releaseOutputBuffer(outputBufferIndex, false);
                             outputBufferIndex = audioEncodec.dequeueOutputBuffer(audioBufferInfo, 0);
                         }
@@ -504,6 +525,8 @@ public abstract class BasePushEncoder {
         void onSpsPpsInfo(byte[] sps, byte[] pps);
 
         void onVidoInfo(byte[] data, boolean isKeyFrame);
+
+        void onAudioInfo(byte[] data);
     }
 
     public static String byteToHex(byte[] bytes) {

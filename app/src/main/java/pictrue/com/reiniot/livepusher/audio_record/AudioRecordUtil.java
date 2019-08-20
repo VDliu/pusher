@@ -60,6 +60,14 @@ public class AudioRecordUtil {
         start = false;
     }
 
+    public boolean isExit() {
+        return exit;
+    }
+
+    public boolean isStart() {
+        return start;
+    }
+
     public interface OnRecordListener {
         void onRecorder(byte[] data, int size);
     }

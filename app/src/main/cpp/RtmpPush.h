@@ -28,15 +28,19 @@ public:
     bool startPush;
     long startTime;
 public:
-    RtmpPush(const char *url,CallJava *callJava);
+    RtmpPush(const char *url, CallJava *callJava);
 
     ~RtmpPush();
 
     void init();
 
-    void pushSpsPps(char *sps,int spsLen,char*pps,int ppsLen);
+    void pushSpsPps(char *sps, int spsLen, char *pps, int ppsLen);
 
-    void pushVideo(char *data,int len, bool isKeyFrame);
+    void pushVideo(char *data, int len, bool isKeyFrame);
+
+    void pushAudio(char *data, int len);
+
+    void stop();
 
 };
 
